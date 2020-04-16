@@ -1,0 +1,102 @@
+---
+title: R Notebook for reading, visualizing and mapping data sets from CoralNet generated
+  by the MBON Pole to Pole program
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+Written by E. Montes.
+April 16, 2020
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+Let's first read the data table downloaded from CoralNet (as .csv) and generate a data frame named "data.subset" containing information from a selected site (sel_site), stratum and species.
+
+```{r}
+rm(list=ls()) ## clear variables
+library(tidyverse)
+library(plotly)
+library(leaflet)
+
+# point to data directory
+setwd("~/CN_data_cruncher/data")
+
+# read the data as a .csv file
+data <- read.csv("annotations_Argentina.csv", header = TRUE)
+labels <- read.csv("labelset_Argentina.csv", header = TRUE)
+
+ # select site, stratum and species (using labelset list)
+sel_site <- "PUNTA CUEVAS"
+stratum <- "MIDTIDE"
+spp <- "ULVA"
+
+# extract machine confidence levels (CL) of annotations from selected site, stratum and label. 
+data.summary <- filter(data, site == sel_site & strata == stratum & Machine.suggestion.1 == spp)
+num_annot = (1:nrow(data.summary))
+data.subset <- as.data.frame(cbind(num_annot, m_conf = data.summary$Machine.confidence.1))
+```
+
+
+Now let's create a bar plot showing machine confidence level (level 1) per each of the images analyzed
+```{r}
+# make an interactive barplot of picture number versus CL
+sel_sub <- paste("SITE:", sel_site, "", "STRATUM:", stratum, "SPP:", spp)
+p <- ggplot(data = data.subset, aes(x = num_annot, y = m_conf)) +
+   geom_bar(stat = "identity", fill = "#E69F00") + labs(x = "Picture number", y = "Machine confidence", title = sel_sub)
+ggplotly(p)
+```
+
+This is the same thing but shown as a line plot because it is easier to interpret with high data density
+```{r}
+# make an interactive line of picture number versus CL
+sel_sub <- paste("SITE:", sel_site, "", "STRATUM:", stratum, "SPP:", spp)
+p2 <- ggplot(data = data.subset, aes(x = num_annot, y = m_conf)) +
+   geom_line(colour = "#408FA6") + labs(x = "Picture number", y = "Machine confidence", title = sel_sub)
+ggplotly(p2)
+
+```
+
+
+Now let's create a map showing locality and site and associated machine confidence levels in the identification of the selected species.
+```{r}
+# for number of taxa (richness)
+mybins <- seq(0, 100, by=10)
+mypalette <- colorBin( palette="YlOrBr", domain=data.summary$Machine.confidence.1, na.color="transparent", bins=mybins)
+
+# extract lat lons
+long <- data.summary$Longitude
+lat <- data.summary$Latitude
+
+# Prepare the text for the tooltip:
+mytext <- paste(
+  "Locality: ", data.summary$locality, "<br/>",
+  "Site: ", data.summary$site, "<br/>",
+  "Stratum: ", data.summary$strata, "<br/>",
+  "Spp: ", data.summary$Machine.suggestion.1 , sep="") %>%
+  lapply(htmltools::HTML)
+
+# Final Map
+m <- leaflet(data.summary) %>%
+  addTiles()  %>%
+  setView( lat=-43, lng=-65 , zoom=3) %>%
+  addProviderTiles("Esri.WorldImagery") %>%
+  addCircleMarkers(~long, ~lat,
+                   fillColor = ~mypalette(Machine.confidence.1), fillOpacity = 0.7, color="white", radius=12, stroke=FALSE,
+                   label = mytext,
+                   labelOptions = labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"), textsize = "13px", direction = "auto")
+  ) %>%
+  addLegend( pal=mypalette, values=~Machine.confidence.1, opacity=0.9, title = "Confidence Level", position = "bottomright" )
+m
+```
+
+
