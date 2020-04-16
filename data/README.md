@@ -1,1 +1,1 @@
-add data tables (.csv) from CoralNet here
+add data tables (.csv) from CoralNet to this directory
