@@ -22,8 +22,9 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 
 Let's first read the data table downloaded from CoralNet (as .csv) and generate a data frame named "data.subset" containing information from a selected site (sel_site), stratum and species.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 rm(list=ls()) ## clear variables
+
 library(tidyverse)
 library(plotly)
 library(leaflet)
@@ -70,7 +71,7 @@ ggplotly(p2)
 
 
 Now let's create a map showing locality and site and associated machine confidence levels in the identification of the selected species.
-```{r}
+```{r,warning=FALSE}
 # for number of taxa (richness)
 mybins <- seq(0, 100, by=10)
 mypalette <- colorBin( palette="YlOrBr", domain=data.summary$Machine.confidence.1, na.color="transparent", bins=mybins)
