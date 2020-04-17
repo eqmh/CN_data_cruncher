@@ -2,9 +2,9 @@
 title: R Notebook for reading, visualizing and mapping data sets from CoralNet generated
   by the MBON Pole to Pole program
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 Written by E. Montes.
@@ -28,8 +28,10 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 
-# point to data directory
-setwd("~/CN_data_cruncher/data")
+# point to data directory (write you path here)
+work_dir <- "~/Documents/GitHub/CN_data_cruncher/data"
+setwd(work_dir)
+
 
 # read the data as a .csv file
 data <- read.csv("annotations_Argentina.csv", header = TRUE)
